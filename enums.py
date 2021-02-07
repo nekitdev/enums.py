@@ -33,7 +33,7 @@ Alpha
 
 MIT License
 
-Copyright (c) 2020 nekitdev
+Copyright (c) 2020-2021 nekitdev
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -56,9 +56,9 @@ SOFTWARE.
 
 __title__ = "enums"
 __author__ = "nekitdev"
-__copyright__ = "Copyright 2020 nekitdev"
+__copyright__ = "Copyright 2020-2021 nekitdev"
 __license__ = "MIT"
-__version__ = "0.5.0"
+__version__ = "0.5.1"
 
 import sys
 from types import DynamicClassAttribute as dynamic_attribute, FrameType, MappingProxyType

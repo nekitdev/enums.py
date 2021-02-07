@@ -7,7 +7,7 @@ root = Path(__file__).parent
 
 init = (root / "enums.py").read_text("utf-8")
 
-result = re.search(r'^__version__\s*=\s*[\'"]([^\'"]*)[\'"]', init, re.MULTILINE)
+result = re.search(r"^__version__\s*=\s*[\"']([^\"']*)[\"']", init, re.MULTILINE)
 
 if result is None:
     raise RuntimeError("Failed to find version.")
@@ -26,7 +26,7 @@ setup(
     version=version,
     py_modules=["enums", "test_enums"],
     license="MIT",
-    description="Enhanced Enum Implementation for Python",
+    description="Enhanced Enum implementation for Python.",
     long_description=readme,
     long_description_content_type="text/x-rst",
     include_package_data=True,
