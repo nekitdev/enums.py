@@ -591,7 +591,7 @@ Just like ``enum_start``, defines a *start* value that should be used for enum m
 boundary
 ~~~~~~~~
 
-Represents boundaries for flags. See :ref:`the following section <Flag Boundaries>`.
+Represents boundaries for flags. See **Flag Boundaries** section for more information.
 
 Special Names
 -------------
