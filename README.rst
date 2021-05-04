@@ -475,6 +475,32 @@ Example:
     print(Grade.B == 4)  # True
     print(Grade.F >= 0)  # True
 
+Defining Traits
+---------------
+
+One can define their own trait for enumerations by deriving from ``Trait``.
+
+Example:
+
+.. code-block:: python3
+
+    class StrTitle(Trait):
+        """Use title of the member in str() calls."""
+
+        def __str__(self) -> str:
+            return self.title
+
+Using the trait is as simple as expected:
+
+.. code-block:: python3
+
+    class Color(StrTitle, Enum):
+        RED = auto()
+        GREEN = auto()
+        BLUE = auto()
+
+    print(Color.RED)  # Red
+
 Unique Enumerations
 -------------------
 

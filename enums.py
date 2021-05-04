@@ -690,6 +690,9 @@ WRAPPING_CALLER = 2
 BOUNDARY = "boundary"
 BOUNDARY_ATTRIBUTE = UNDER + BOUNDARY
 
+MEMBER_MAP = "member_map"
+MEMBER_MAP_ATTRIBUTE = UNDER + MEMBER_MAP
+
 
 class EnumType(type):
     @classmethod
@@ -1106,7 +1109,7 @@ class EnumType(type):
         """Set new attribute, blocking member reassign attempts.
         To add new fields, consider using Enum.add_member or Enum.update.
         """
-        member_map = cls.__dict__.get("_member_map", {})  # this is used to prevent recursion
+        member_map = cls.__dict__.get(MEMBER_MAP_ATTRIBUTE, {})  # we have to prevent recursion
 
         if name in member_map:
             raise AttributeError(f"Attempt to reassign enum member: {member_map[name]}.")
