@@ -1,8 +1,33 @@
+# type: ignore
+
 import pickle
+
+from math import sqrt
+from typing import Any, Tuple
 
 import pytest
 
-from enums import Enum, IntEnum, Flag, IntFlag, Order, StrFormat, auto, unique
+from enums import (
+    # boundaries
+    CONFORM,
+    EJECT,
+    KEEP,
+    STRICT,
+    # enumerations
+    Enum,
+    IntEnum,
+    StrEnum,
+    # flags
+    Flag,
+    IntFlag,
+    # traits
+    Order,
+    StrFormat,
+    # auto item
+    auto,
+    # decorator
+    unique,
+)
 import enums
 
 # below are some enums used for testing
@@ -34,27 +59,27 @@ class Grade(IntEnum):
     F = 1
 
 
-class GermanNumber(str, Enum):
-    one = "eins"
-    two = "zwei"
-    three = "drei"
+class JapaneseNumber(StrEnum):
+    one = "ichi"
+    two = "ni"
+    three = "san"
 
 
-class Perm(Flag):
-    Z = 0  # zero
-    X = 1  # execute
-    W = 2  # write
+class Perm(Flag, boundary=STRICT):
     R = 4  # read
-
-
-class IntPerm(IntFlag):
-    Z = 0  # zero
-    X = 1  # execute
     W = 2  # write
+    X = 1  # execute
+    Z = 0  # zero
+
+
+class IntPerm(IntFlag, boundary=KEEP):
     R = 4  # read
+    W = 2  # write
+    X = 1  # execute
+    Z = 0  # zero
 
 
-class Color(Flag):
+class Color(Flag, boundary=CONFORM):
     BLACK = 0
     RED = 1
     GREEN = 2
@@ -65,6 +90,10 @@ class Color(Flag):
     MAGENTA = RED | BLUE
 
     WHITE = RED | GREEN | BLUE
+
+
+class Throw(IntFlag, boundary=EJECT):
+    EMPTY = 0
 
 
 class Sign(Order, Enum):
@@ -94,7 +123,7 @@ def format_is_value(format_string: str, member: Enum) -> bool:
     return format_string.format(member) == format_string.format(member.value)
 
 
-class TestHelpers:
+class TestDescriptorCheck:
     DESCRIPTOR_ATTRIBUTES = ("__get__", "__set__", "__delete__")  # attributes of descriptors
     VALUE = 13  # any value to use as placeholder
 
@@ -107,11 +136,15 @@ class TestHelpers:
             some_object = SomeClass()
 
             assert not enums._is_descriptor(some_object)
+
             setattr(some_object, attribute, self.VALUE)  # set some value
+
             assert enums._is_descriptor(some_object)
 
-    LOWER_NAME = "test"  # everything in TO_LOWER_NAME should be converted to this
-    TO_LOWER_NAME = (
+
+class TestNameHelpers:
+    CASEFOLD_NAME = "test"  # everything in TO_CASEFOLD_NAME should be converted to this
+    TO_CASEFOLD_NAME = (
         "TEST",
         "Test",
         "test",
@@ -120,11 +153,11 @@ class TestHelpers:
         "test_",
         "test__",
         "__test__",
-    )  # everything should be converted to LOWER_NAME
+    )  # everything should be converted to CASEFOLD_NAME
 
-    def test_lower_name(self) -> None:
-        for name in self.TO_LOWER_NAME:
-            assert enums._lower_name(name) == self.LOWER_NAME
+    def test_casefold_name(self) -> None:
+        for name in self.TO_CASEFOLD_NAME:
+            assert enums._casefold_name(name) == self.CASEFOLD_NAME
 
     CHAR = "_"  # char to use in starts_and_ends_with()
     NAME = "nekit"  # name to test with starts_and_ends_with()
@@ -197,7 +230,55 @@ class TestHelpers:
         for not_dunder_or_not_strict in self.NOT_DUNDERS_OR_NOT_STRICT:
             assert not enums._is_strict_dunder(not_dunder_or_not_strict)
 
-    # pairs (bases, expected_type)
+    OBJECT_TO_TITLE = {
+        None: "undefined",
+        "UPPER_CASE": "Upper Case",
+        "TitleCase": "TitleCase",
+        "casefold_case": "casefold_case",
+    }
+
+    def test_create_title(self) -> None:
+        for key, value in self.OBJECT_TO_TITLE.items():
+            assert enums._create_title(key) == value
+
+
+BINARY = "b"
+SPACE = " "
+
+
+class TestBinary:
+    RANGE = range(0, 1 << 10)
+
+    def parse(self, string: str) -> Tuple[int, int, int]:
+        prefix_part, space, value_part = string.partition(SPACE)
+
+        if not space:  # pragma: no cover
+            raise ValueError(f"Invalid string: {string!r}.")
+
+        length = len(value_part)
+        value = int(value_part, 2)
+
+        prefix, binary, sign_part = prefix_part.partition(BINARY)
+
+        if not binary:  # pragma: no cover
+            raise ValueError(f"Invalid string: {string!r}.")
+
+        sign = int(sign_part, 2)
+
+        return sign, length, value
+
+    def test_binary(self) -> None:
+        for item in self.RANGE:
+            for binary in (item, ~item):
+                string = enums.bin(binary)
+
+                sign, length, value = self.parse(string)
+
+                assert -(sign << length) + value == binary
+
+
+class TestTypes:
+    # (bases, expected_type) pairs
     EMPTY = ((), object)
     WITH_DATA_TYPE = ((object, int, Enum), int)
     WITHOUT_DATA_TYPE = ((object, Enum), object)
@@ -205,6 +286,13 @@ class TestHelpers:
     def test_find_data_type(self) -> None:
         for (bases, expected_type) in (self.EMPTY, self.WITH_DATA_TYPE, self.WITHOUT_DATA_TYPE):
             assert enums._find_data_type(bases) is expected_type
+
+    EXCESSIVE_TYPES = ((bool, int), (float, int), (bytes, str))
+
+    def test_fail_on_excessive_types(self) -> None:
+        for types in self.EXCESSIVE_TYPES:
+            with pytest.raises(TypeError):
+                enums._find_data_type(types)
 
     def test_make_class_unpicklable(self) -> None:
         pickle_object = PickleClass()
@@ -216,16 +304,18 @@ class TestHelpers:
         with pytest.raises(TypeError):
             pickle.dumps(pickle_object)  # can NOT be pickled
 
-    OBJECT_TO_READABLE = {
-        None: "undefined",
-        "UPPER_CASE": "Upper Case",
-        "TitleCase": "TitleCase",
-        "lower_case": "lower_case",
-    }
+    def test_make_namespace_unpicklable(self) -> None:
+        namespace = {}
 
-    def test_make_readable(self) -> None:
-        for key, value in self.OBJECT_TO_READABLE.items():
-            assert enums._make_readable(key) == value
+        enums._make_namespace_unpicklable(namespace)
+
+        class PickleFail:
+            vars().update(namespace)
+
+        pickle_object = PickleFail()
+
+        with pytest.raises(TypeError):
+            pickle.dumps(pickle_object)  # can not be pickled
 
 
 class TestEnumCreate:
@@ -275,7 +365,7 @@ class TestEnumCreate:
 
     def test_invalid_definition(self) -> None:
         with pytest.raises(TypeError):
-            class Broken(float, Enum, int):
+            class Broken(Enum, int):
                 pass  # pragma: no cover
 
     def test_break_on_extend_attempt(self) -> None:
@@ -299,7 +389,7 @@ class TestEnumCreate:
 
             @property
             def distance_from_origin(self) -> float:
-                return (self.x ** 2 + self.y ** 2) ** 0.5
+                return sqrt(self.x * self.x + self.y * self.y)
 
             ORIGIN = (0, 0)
             POINT_3_4 = (3, 4)
@@ -324,6 +414,17 @@ class TestEnumCreate:
             empty = []
 
         assert ListEnum([]) is ListEnum.empty
+
+    def test_derive(self) -> None:
+        class DeriveEnum(Enum):
+            @classmethod
+            def derived(cls) -> int:
+                return 42
+
+        class Derived(DeriveEnum, Enum):
+            pass
+
+        assert Derived.derived() == 42
 
 
 class TestEnum:
@@ -357,8 +458,10 @@ class TestEnum:
 
         with pytest.raises(AttributeError):
             Season.SPRING.name = "PRIMAVERA"
+
         with pytest.raises(AttributeError):
             Season.SPRING.title = "Primavera"
+
         with pytest.raises(AttributeError):
             Season.SPRING.value = 2
 
@@ -372,7 +475,9 @@ class TestEnum:
                 pass
 
         assert hasattr(Foo, "bar")
+
         del Foo.bar
+
         assert not hasattr(Foo, "bar")
 
     def test_delete_member(self) -> None:
@@ -386,7 +491,7 @@ class TestEnum:
         assert bool(Season)  # explicit bool() call here
 
     def test_member_bool(self) -> None:
-        for member in GermanNumber:
+        for member in JapaneseNumber:
             assert bool(member)  # explicit bool() call here
 
     def test_contains(self) -> None:
@@ -510,7 +615,7 @@ class TestSpecial:
     def test_garbage_enum_missing(self) -> None:
         class ReturnsWrong(Enum):
             @classmethod
-            def enum_missing(cls, value: object) -> object:
+            def enum_missing(cls, value: Any) -> Any:
                 return value
 
         with pytest.raises(ValueError):
@@ -518,7 +623,7 @@ class TestSpecial:
 
         class Fails(Enum):
             @classmethod
-            def enum_missing(cls, value: object) -> object:
+            def enum_missing(cls, value: Any) -> Any:
                 raise RuntimeError("enum_missing failed...")
 
         with pytest.raises(ValueError):
@@ -587,6 +692,8 @@ class TestFlag:
         assert not Perm.Z
 
     def test_title(self) -> None:
+        assert Perm.Z.title == "Z"
+
         assert (Perm.R | Perm.W | Perm.X).title == "R, W, X"
 
     def test_from_args(self) -> None:
@@ -597,22 +704,25 @@ class TestFlag:
         for member in self.VALUES:
             for other in self.VALUES:
                 assert member | other is Perm(member.value | other.value)
-                assert member | other.value is Perm(member.value | other.value)
-                assert member.value | other is Perm(member.value | other.value)
+
+        with pytest.raises(TypeError):
+            Perm.R | "Z"
 
     def test_and(self) -> None:
         for member in self.VALUES:
             for other in self.VALUES:
                 assert member & other is Perm(member.value & other.value)
-                assert member & other.value is Perm(member.value & other.value)
-                assert member.value & other is Perm(member.value & other.value)
+
+        with pytest.raises(TypeError):
+            Perm.W & "Z"
 
     def test_xor(self) -> None:
         for member in self.VALUES:
             for other in self.VALUES:
                 assert member ^ other is Perm(member.value ^ other.value)
-                assert member ^ other.value is Perm(member.value ^ other.value)
-                assert member.value ^ other is Perm(member.value ^ other.value)
+
+        with pytest.raises(TypeError):
+            Perm.X ^ "Z"
 
     def test_invert(self) -> None:
         for member in self.VALUES:
@@ -622,6 +732,8 @@ class TestFlag:
     def test_contains(self) -> None:
         assert Perm.R in (Perm.R | Perm.W)
         assert Perm.X not in (Perm.R | Perm.W)
+
+        assert Perm.Z not in Perm.X
 
         with pytest.raises(TypeError):
             "R" in Perm.R
@@ -634,7 +746,7 @@ class TestFlag:
 
         decomposed = [Perm.R, Perm.W, Perm.X]
 
-        assert RWX.decompose() == list(reversed(RWX.decompose(reverse=True))) == decomposed
+        assert list(RWX) == decomposed
 
     def test_auto(self) -> None:
         class AutoFlag(Flag):
@@ -647,8 +759,8 @@ class TestFlag:
     def test_garbage_auto(self) -> None:
         with pytest.raises(ValueError):
             class GarbageAuto(Flag):
-                one = "garbage"
-                two = auto()
+                broken = "garbage"
+                another = auto()
 
     def test_fail_on_not_covered(self) -> None:
         with pytest.raises(ValueError):
@@ -681,13 +793,13 @@ class TestIntFlag:
         IntPerm.Z: "IntPerm.Z",
         IntPerm.R | IntPerm.W: "IntPerm.R|W",
         IntPerm.R | IntPerm.W | IntPerm.X: "IntPerm.R|W|X",
-        IntPerm.R | 8: "IntPerm.8|R",
+        IntPerm.R | 8: "IntPerm.R|0x8",
         IntPerm(0): "IntPerm.Z",
-        IntPerm(8): "IntPerm.8",
+        IntPerm(8): "IntPerm.0x8",
         ~IntPerm.R: "IntPerm.W|X",
         ~IntPerm.W: "IntPerm.R|X",
         ~IntPerm.X: "IntPerm.R|W",
-        ~(IntPerm.R | IntPerm.W | IntPerm.X): "IntPerm.-8",
+        ~(IntPerm.R | IntPerm.W | IntPerm.X): "IntPerm.Z",
         IntPerm(~0): "IntPerm.R|W|X",
         IntPerm(~8): "IntPerm.R|W|X",
     }
@@ -703,15 +815,15 @@ class TestIntFlag:
         IntPerm.Z: "<IntPerm.Z: 0>",
         IntPerm.R | IntPerm.W: "<IntPerm.R|W: 6>",
         IntPerm.R | IntPerm.W | IntPerm.X: "<IntPerm.R|W|X: 7>",
-        IntPerm.R | 8: "<IntPerm.8|R: 12>",
+        IntPerm.R | 8: "<IntPerm.R|0x8: 12>",
         IntPerm(0): "<IntPerm.Z: 0>",
-        IntPerm(8): "<IntPerm.8: 8>",
-        ~IntPerm.R: "<IntPerm.W|X: -5>",
-        ~IntPerm.W: "<IntPerm.R|X: -3>",
-        ~IntPerm.X: "<IntPerm.R|W: -2>",
-        ~(IntPerm.R | IntPerm.W | IntPerm.X): "<IntPerm.-8: -8>",
-        IntPerm(~0): "<IntPerm.R|W|X: -1>",
-        IntPerm(~8): "<IntPerm.R|W|X: -9>",
+        IntPerm(8): "<IntPerm.0x8: 8>",
+        ~IntPerm.R: "<IntPerm.W|X: 3>",
+        ~IntPerm.W: "<IntPerm.R|X: 5>",
+        ~IntPerm.X: "<IntPerm.R|W: 6>",
+        ~(IntPerm.R | IntPerm.W | IntPerm.X): "<IntPerm.Z: 0>",
+        IntPerm(~0): "<IntPerm.R|W|X: 7>",
+        IntPerm(~8): "<IntPerm.R|W|X: 7>",
     }
 
     def test_repr(self) -> None:
@@ -722,15 +834,104 @@ class TestIntFlag:
         with pytest.raises(ValueError):
             IntPerm(1.3)
 
+    def test_contains(self) -> None:
+        assert IntPerm.R.value in IntPerm.R
+
+        assert IntPerm.W in (IntPerm.R | IntPerm.W | IntPerm.X)
+
+        assert 0 not in IntPerm.Z  # special behavior
+
+        with pytest.raises(TypeError):
+            "R" in IntPerm.R
+
+    def test_or(self) -> None:
+        for member in self.VALUES:
+            for other in self.VALUES:
+                assert member | other is IntPerm(member.value | other.value)
+                assert member | other.value is IntPerm(member.value | other.value)
+                assert member.value | other is IntPerm(member.value | other.value)
+
+    def test_and(self) -> None:
+        for member in self.VALUES:
+            for other in self.VALUES:
+                assert member & other is IntPerm(member.value & other.value)
+                assert member & other.value is IntPerm(member.value & other.value)
+                assert member.value & other is IntPerm(member.value & other.value)
+
+    def test_xor(self) -> None:
+        for member in self.VALUES:
+            for other in self.VALUES:
+                assert member ^ other is IntPerm(member.value ^ other.value)
+                assert member ^ other.value is IntPerm(member.value ^ other.value)
+                assert member.value ^ other is IntPerm(member.value ^ other.value)
+
     def test_invert(self) -> None:
         for member in self.VALUES:
-            assert ~member == ~member.value
-            assert ~(member.value) == ~member.value
             assert isinstance(~member, IntPerm)
+            assert ~member is IntPerm(~member.value)
             assert ~~member is member
 
 
-class TestMutation:
+class TestBoundary:
+    INVALID = 0x10
+
+    def test_strict_boundary(self) -> None:
+        assert Perm.boundary is STRICT
+
+        with pytest.raises(ValueError):
+            Perm(self.INVALID)
+
+    def test_conform_boundary(self) -> None:
+        assert Color.boundary is CONFORM
+
+        color = Color.RED | Color.BLUE
+
+        assert color | Color(self.INVALID) is color
+
+    def test_keep_boundary(self) -> None:
+        assert IntPerm.boundary is KEEP
+
+        RWX = IntPerm.R | IntPerm.W | IntPerm.X
+
+        assert (RWX | self.INVALID) is IntPerm(RWX.value | self.INVALID)
+
+    def test_keep_boundary_title(self) -> None:
+        RWX = IntPerm.R | IntPerm.W | IntPerm.X
+
+        INVALID = IntPerm(self.INVALID)
+
+        assert RWX.title == "R, W, X"
+
+        assert INVALID.title == hex(self.INVALID)
+
+        assert (RWX | INVALID).title == f"R, W, X ({hex(self.INVALID)} not covered)"
+
+    def test_eject_boundary(self) -> None:
+        assert Throw.boundary is EJECT
+
+        assert Throw(42) == 42
+
+        empty = Throw.EMPTY
+
+        assert empty | 13 == 13
+
+    def test_invalid_definition(self) -> None:
+        with pytest.raises(TypeError):
+            class Color(Flag, boundary=STRICT):
+                RED = 1  # we define one color
+                # BLUE = 4  # and we do not define another color (commented out on purpose)
+                MAGENTA = 1 | 4  # but use their combination, which is impossible unless KEEP
+
+    def test_unknown_values(self) -> None:
+        class Color(Flag, boundary=STRICT):
+            RED = 1
+            # BLUE = 4  # again, not defined (commented out on purpose)
+
+        with pytest.raises(ValueError):
+            MAGENTA = Color(1 | 4)  # attempt to initialize  # noqa
+
+
+class TestUpdate:
     def test_update_works(self) -> None:
         class Color(Enum):
             RED = 1

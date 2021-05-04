@@ -14,7 +14,7 @@ if result is None:
 
 version = result.group(1)
 
-readme = (root / "README.rst").read_text("utf-8")
+long_description = (root / "README.rst").read_text("utf-8")
 
 
 setup(
@@ -26,8 +26,8 @@ setup(
     version=version,
     py_modules=["enums", "test_enums"],
     license="MIT",
-    description="Enhanced Enum implementation for Python.",
-    long_description=readme,
+    description="Enhanced Enumerations for Python.",
+    long_description=long_description,
     long_description_content_type="text/x-rst",
     include_package_data=True,
     extras_require={"test": ["coverage", "flake8", "pytest"]},
@@ -39,6 +39,8 @@ setup(
         "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3.9",
+        "Programming Language :: Python :: 3.10",
+        # "Typing :: Typed",  # XXX: perhaps some long while later?
         "Natural Language :: English",
         "Operating System :: OS Independent",
     ],

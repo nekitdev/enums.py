@@ -9,7 +9,7 @@ enums.py
 
 .. image:: https://img.shields.io/pypi/v/enums.py.svg
     :target: https://pypi.python.org/pypi/enums.py
-    :alt: PyPI Library Version
+    :alt: Library Version
 
 .. image:: https://img.shields.io/pypi/pyversions/enums.py.svg
     :target: https://pypi.python.org/pypi/enums.py
@@ -17,43 +17,73 @@ enums.py
 
 .. image:: https://img.shields.io/pypi/status/enums.py.svg
     :target: https://github.com/nekitdev/enums.py
-    :alt: Project Development Status
+    :alt: Development Status
 
 .. image:: https://img.shields.io/pypi/dm/enums.py.svg
     :target: https://pypi.python.org/pypi/enums.py
-    :alt: Library Downloads/Month
+    :alt: Library Downloads / Month
 
-.. image:: https://app.codacy.com/project/badge/Grade/5a7b36c3304d40818c5d8b4181fe8564
-    :target: https://app.codacy.com/project/nekitdev/enums.py/dashboard
-    :alt: Code Quality [Codacy]
+.. image:: https://app.codacy.com/project/badge/Grade/a961fd80512140f29ddb2a42b8cf5fb1
+    :target: https://app.codacy.com/gh/nekitdev/enums.py/dashboard
+    :alt: Code Quality
 
 .. image:: https://img.shields.io/coveralls/github/nekitdev/enums.py
     :target: https://coveralls.io/github/nekitdev/enums.py
     :alt: Code Coverage
 
-.. image:: https://img.shields.io/endpoint.svg?url=https%3A%2F%2Fshieldsio-patreon.herokuapp.com%2Fnekit%2Fpledges
-    :target: https://patreon.com/nekit
-    :alt: Patreon Page [Support]
+enums.py is a module that implements enhanced enumerations for Python.
 
-enums.py is a module that implements enhanced enums for Python.
-
-**Incompatible with standard library enums!**
+**Incompatible with standard library!**
 
 Below are many examples of using this module.
 
-Importing
----------
+Prerequisites
+-------------
 
-Here are main classes and functions that are used in enums:
+Code snippets and examples are using several common imports and types,
+which are mainly omitted for simplicity:
 
 .. code-block:: python3
 
-    from enums import Enum, Flag, IntEnum, IntFlag, Order, StrFormat, auto, unique
+    from typing import TypeVar  # for different typing purposes
 
-Creating Enums
---------------
+    from enums import (  # library imports used in examples
+        # enumerations
+        Enum,
+        StrEnum,
+        IntEnum,
+        # flag boundary
+        FlagBoundary,
+        # boundaries
+        CONFORM,
+        EJECT,
+        KEEP,
+        STRICT,
+        # flags
+        Flag,
+        IntFlag,
+        # traits
+        Trait,
+        Order,
+        StrFormat,
+        # auto item
+        auto,
+        # unique decorator
+        unique,
+    )
 
-There are many ways to create enums.
+    T = TypeVar("T")  # general (and generic) type variable
+
+    E = TypeVar("E", bound=Enum)  # enumeration type variable
+
+    F = TypeVar("F", bound=Flag)  # flag type variable
+    FB = TypeVar("FB", bound=FlagBoundary)  # flag boundary type variable
+    IF = TypeVar("IF", bound=IntFlag)  # integer flag type variable
+
+Creating Enumerations
+---------------------
+
+There are many ways to create enumerations.
 
 This can be done in classical way:
 
@@ -64,7 +94,7 @@ This can be done in classical way:
         GREEN = 2
         BLUE = 3
 
-Like standard ``enum`` module, ``enums.py`` has ``auto`` class:
+Like the standard ``enum`` module, ``enums.py`` has ``auto`` class:
 
 .. code-block:: python3
 
@@ -73,7 +103,7 @@ Like standard ``enum`` module, ``enums.py`` has ``auto`` class:
         GREEN = auto()
         BLUE = auto()
 
-Enums can be created without explicit ``class`` usage:
+Enumerations can be created without explicit ``class`` usage:
 
 .. code-block:: python3
 
@@ -97,7 +127,7 @@ Same with ``auto()``, of course:
 
     Color = Enum("Color", RED=auto(), GREEN=auto(), BLUE=auto())
 
-All code snippets above produce Enum ``Color`` in the end, which has 3 members:
+All code snippets above produce ``Color`` in the end, which has 3 members:
 
 - ``<Color.RED: 1>``
 
@@ -105,10 +135,10 @@ All code snippets above produce Enum ``Color`` in the end, which has 3 members:
 
 - ``<Color.BLUE: 3>``
 
-Enums with Arguments
---------------------
+Using Arguments
+---------------
 
-Enum members that have ``tuple`` values but do not subclass ``tuple``
+Enumeration members that have ``tuple`` values but do not subclass ``tuple``
 are interpreted as values passed to ``__init__`` of their class:
 
 .. code-block:: python3
@@ -131,6 +161,7 @@ are interpreted as values passed to ``__init__`` of their class:
         def surface_gravity(self) -> float:
             # universal gravitational constant
             G = 6.67300E-11  # m^3 kg^(-1) s^(-2)
+
             return G * self.mass / (self.radius * self.radius)
 
     print(Planet.EARTH.value)  # (5.976e+24, 6378140.0)
@@ -139,7 +170,7 @@ are interpreted as values passed to ``__init__`` of their class:
 Iteration
 ---------
 
-It is possible to iterate over unique enum members:
+It is possible to iterate over unique enumeration members:
 
 .. code-block:: python3
 
@@ -171,7 +202,7 @@ Or over all members, including aliases:
 Member Attributes
 -----------------
 
-Enum members have several useful attributes:
+Enumeration members have several useful attributes:
 
 - *name*, which represents their actual name;
 
@@ -185,32 +216,34 @@ Enum members have several useful attributes:
     print(Color.BLUE.value)  # 3
     print(Color.BLUE.title)  # Blue
 
-Advanced Name/Value to Enum
----------------------------
+Advanced Access
+---------------
 
-Enums can be created from case insensitive strings:
+Enumeration members can be accessed with case insensitive strings:
 
 .. code-block:: python3
 
     class Test(Enum):
-        WEIRDTEST = 13
+        TEST = 13
 
-    test = Test.from_name("weird_test")
+    test = Test.from_name("test")  # <Test.TEST: 13>
 
 **Note that if two members have same case insensitive name version, last in wins!**
 
 **Also keep in mind** ``Enum.from_name`` **will not work with composite flags!**
 
-You can use ``Flag.from_args`` to create composite flag from multiple values/names:
+You can use ``Flag.from_args`` to create composite flag from multiple values or names:
 
 .. code-block:: python3
 
     Perm = Flag("Perm", "Z X W R", start=0)
-    Perm.from_args("r", "w", "x")  # <Perm.R|W|X: 7>
-    Perm.from_args(2, 4)  # <Perm.R|W: 6>
+
+    Perm.from_args("r", "w", "x")  # <Perm.X|R|W: 7>
+
+    Perm.from_args(2, 4)  # <Perm.W|R: 6>
 
 There is also ``Enum.from_value``, which tries to use ``Enum.from_name`` if given value is string,
-and otherwise (and if failed), it attempts by-value lookup. Also, this function accepts ``default``
+and otherwise (also if failed), it attempts by-value lookup. This function accepts ``default``
 argument, such that ``Enum.from_value(default)`` will be called on fail if ``default`` was given.
 
 Example:
@@ -223,11 +256,25 @@ Example:
     Perm.from_value(8, default=0)  # <Perm.Z: 0>
     Perm.from_value("broken", "r")  # <Perm.R: 4>
 
-Flag Enums
-----------
+String Enumeration
+------------------
 
-``Flag`` is a special enum that focuses around supporting bitflags,
-along with operations on them, such as **OR** ``|``, **AND** ``&``, **XOR** ``^`` and **NEG** ``~``.
+``StrEnum`` is a simple type derived from ``Enum``,
+which only affects ``enum_generate_next_value``
+by making it use the casefolded version of the member name:
+
+.. code-block:: python3
+
+    class Relationship(StrEnum):
+        BLOCKED = auto()  # "blocked"
+        FOLLOWED = auto()  # "followed"
+        FRIEND = auto()  # "friend"
+
+Flags
+-----
+
+``Flag`` is a special enumeration that focuses around supporting bit-flags along with operations on them,
+such as **OR** ``|``, **AND** ``&``, **XOR** ``^`` and **INVERT** ``~``.
 
 .. code-block:: python3
 
@@ -237,54 +284,94 @@ along with operations on them, such as **OR** ``|``, **AND** ``&``, **XOR** ``^`
         W = 2
         R = 4
 
-    # <Perm.R|W: 6>
+    # <Perm.W|R: 6>
     RW = Perm.R | Perm.W
 
     # <Perm.R: 4>
     R = (Perm.R | Perm.W) & Perm.R
 
-    # <Perm.W|X: 3>
+    # <Perm.X|W: 3>
     WX = Perm.W ^ Perm.X
 
     # <Perm.Z: 0>
     Z = Perm.X ^ Perm.X
 
-    # <Perm.R|X: 5>
+    # <Perm.X|R: 5>
     RX = ~Perm.W
 
-Integers can be used instead of enum members:
+Flag Boundaries
+---------------
+
+Flags can have different *boundaries* (of type ``FlagBoundary``)
+that define how unknown bits are handled.
+
+STRICT
+~~~~~~
+
+*Strict* boundary is pretty straightforward: an exception is raised on any unknown bits.
 
 .. code-block:: python3
 
-    RWX = Perm.Z | 1 | 2 | 4
+    class Strict(Flag, boundary=STRICT):
+        X = auto()  # 0b0001
+        Y = auto()  # 0b0010
+        Z = auto()  # 0b0100
 
-Flag Combinations
------------------
+    strict = Strict(0b1101)  # error!
 
-Flag members have ``Flag.decompose()`` method, which will include all named flags and all named combinations of flags that are in their value.
+    # Traceback (most recent call last):
+    # <...>
+    # ValueError: Invalid value 13 in Strict:
+    #     given 0b0 1101
+    #   allowed 0b0 0111
+    # <...>
 
-``str()`` and ``repr()`` on flags will use ``Flag.decompose()`` for composite flags that do not have names.
+CONFORM
+~~~~~~~
+
+*Conform* boundary is going to remove any invalid bits, leaving only known ones.
 
 .. code-block:: python3
 
-    class Color(StrFormat, Enum):
-        RED = 1
-        GREEN = 2
-        BLUE = 4
-        YELLOW = RED | GREEN
-        MAGENTA = RED | BLUE
-        CYAN = GREEN | BLUE
+    class Conform(Flag, boundary=CONFORM):
+        X = auto()  # 0b0001
+        Y = auto()  # 0b0010
+        Z = auto()  # 0b0100
 
-    # named combination
-    print(repr(Color(3)))  # <Color.YELLOW: 3>
+    conform = Conform(0b1101)  # 0b0101 -> <Conform.X|Z: 5>
 
-    # unnamed combination
-    print(repr(Color(7)))  # <Color.CYAN|MAGENTA|BLUE|YELLOW|GREEN|RED: 7>
+EJECT
+~~~~~
+
+*Eject* boundary is going to remove ``Flag`` membership from out-of-range values.
+
+.. code-block:: python3
+
+    class Eject(Flag, boundary=EJECT):
+        X = auto()  # 0b0001
+        Y = auto()  # 0b0010
+        Z = auto()  # 0b0100
+
+    eject = Eject(0b1101)  # 13
+
+KEEP
+~~~~
+
+*Keep* boundary is going to save all invalid bits.
+
+.. code-block:: python3
+
+    class Keep(Flag, boundary=KEEP):
+        X = auto()  # 0b0001
+        Y = auto()  # 0b0010
+        Z = auto()  # 0b0100
+
+    keep = Keep(0b1101)  # <Keep.X|Z|0x8: 13>
 
 Type Restriction and Inheritance
 --------------------------------
 
-Enum members can be restricted to have values of the same type:
+Enumeration members can be restricted to have values of the same type:
 
 .. code-block:: python3
 
@@ -303,18 +390,11 @@ As well as inherit behavior from that type:
         MAIN = 2
 
     FULL = Access.SIMPLE | Access.MAIN
-    assert FULL > Access.MAIN
-    print(FULL.bit_length())  # 2
 
-Because ``IntEnum`` and ``IntFlag`` are subclasses of ``int``, they lose their membership when ``int`` operations are used with them:
+    print(FULL + 10)  # 13
 
-.. code-block:: python3
-
-    Access = IntFlag("Access", "NONE SIMPLE MAIN", start=0)
-
-    print(repr(Access.NONE | Access.SIMPLE | Access.MAIN))  # <Access.MAIN|SIMPLE: 3>
-
-    print(Access.SIMPLE + Access.MAIN)  # 3
+Because ``IntEnum`` and ``IntFlag`` are subclasses of ``int``,
+they lose their membership when ``int`` operations are used with them.
 
 Method Resolution Order
 -----------------------
@@ -323,7 +403,7 @@ Method Resolution Order
 
 .. code-block:: python3
 
-    EnumName([mixin_type, ...] [data_type] enum_type)
+    EnumName([trait_type, ...] [data_type] enum_type)
 
 For example:
 
@@ -339,16 +419,16 @@ Here, ``FloatValue`` bases are going to be transformed into:
 
 .. code-block:: python3
 
-    Value, float, Order, Enum
+    (Value, float, Order, Enum)
 
-Which allows us to preserve functions defined in enums or flags,
-while still having *mixins* work nicely with overriding them.
+Which allows us to preserve functions defined in enumerations or flags,
+while still having *traits* work nicely with overriding them.
 
 Traits
 ------
 
-``enums.py`` implements special *mixins*, called *Traits*.
-Each Trait implements some functionality for enums, but does not subclass Enum.
+``enums.py`` implements special *traits* (aka *mixins*), which add specific behavior to classes.
+Each Trait implements some functionality for enumerations, but does not subclass ``Enum``.
 Therefore they are pretty much useless on their own.
 
 StrFormat
@@ -375,8 +455,8 @@ Default ``__format__`` of ``Enum`` will attempt to use ``__format__`` of member 
 Order
 ~~~~~
 
-``Order`` Trait implements ordering (``==``, ``!=``, ``<``, ``>``, ``<=`` and ``>=``) for Enum members.
-This function will attempt to find member by value.
+``Order`` trait implements ordering (``==``, ``!=``, ``<``, ``>``, ``<=`` and ``>=``)
+for enumeration members. This function will attempt to find member by value.
 
 Example:
 
@@ -395,10 +475,10 @@ Example:
     print(Grade.B == 4)  # True
     print(Grade.F >= 0)  # True
 
-Unique Enums
-------------
+Unique Enumerations
+-------------------
 
-Enum members can have aliases, for example:
+Enumeration members can have aliases, for example:
 
 .. code-block:: python3
 
@@ -408,8 +488,8 @@ Enum members can have aliases, for example:
         BLUE = 3
         R, G, B = RED, GREEN, BLUE  # aliases
 
-``enums.py`` has ``unique`` class decorator, that can be used
-to check/identify that enum does not have aliases.
+``enums.py`` has ``@unique`` class decorator, that can be used
+to check and identify that enumeration does not have aliases.
 
 That is, the following snippet will error:
 
@@ -431,11 +511,12 @@ With the following exception:
 Class Keyword Arguments
 -----------------------
 
-Enum class knows 3 class keyword arguments:
+``Enum`` class knows several class keyword arguments:
 
 - **auto_on_missing** - ``bool``
 - **ignore** - ``Union[str, Iterable[str]]``
 - **start** - ``T``
+- **boundary** - ``FB`` (used in ``Flag``)
 
 auto_on_missing
 ~~~~~~~~~~~~~~~
@@ -460,10 +541,11 @@ Works same as putting ``enum_ignore`` inside the class (default is ``()`` (empty
 
     class Time(Enum, ignore=("time_vars", "day")):
         time_vars = vars()
+
         for day in range(366):
             time_vars[f"day_{day}"] = day
 
-    print(repr(Time.day_365))  # <Time.day_365: 365>
+    day = Time.day_365  # <Time.day_365: 365>
 
 start
 ~~~~~
@@ -472,17 +554,25 @@ Just like ``enum_start``, defines a *start* value that should be used for enum m
 
 .. code-block:: python3
 
-    class Perm(Flag, auto_on_missing=True, start=0):
-        Z, X, W, R  # 0, 1, 2, 4
+    class Perm(Flag, start=0):
+        Z = auto()  # 0
+        X = auto()  # 1
+        W = auto()  # 2
+        R = auto()  # 4
 
     print(repr(Perm.R | Perm.W))  # <Perm.R|W: 6>
+
+boundary
+~~~~~~~~
+
+Represents boundaries for flags. See :ref:`the following section <Flag Boundaries>`.
 
 Special Names
 -------------
 
 ``enums.py`` uses special names for managing behavior:
 
-- **enum_missing** - ``classmethod(cls: Type[Enum], value: T) -> Enum``
+- **enum_missing** - ``classmethod(cls: Type[E], value: T) -> E``
 
 - **enum_ignore** - ``Union[str, Iterable[str]]``
 
@@ -492,7 +582,7 @@ Special Names
 
 - **enum_start** - ``T``
 
-- **_name** - ``str``
+- **_name** - ``Optional[str]``
 
 - **_value** - ``T``
 
@@ -514,17 +604,20 @@ Class method that should be used in order to process values that are not present
         def enum_missing(cls, value: Union[float, int]) -> Enum:
             if value < 1:
                 return cls.SLOW
+
             elif value > 3:
                 return cls.FAST
+
             else:
                 return cls.NORMAL
 
-    print(repr(Speed(5)))  # <Speed.FAST: 3>
+    speed = Speed(5)  # <Speed.FAST: 3>
 
 enum_ignore
 ~~~~~~~~~~~
 
-Iterable of strings or a string that contains names of class members that should be ignored when creating enum members:
+Iterable of strings or a string that contains names of class members
+that should be ignored when creating enumeration members:
 
 .. code-block:: python3
 
@@ -545,18 +638,18 @@ enum_generate_next_value
 Static method that takes member name, start value (default is None, unless specified otherwise),
 count of unique members already created and list of all member values (including aliases).
 
-This method should output value for new enum member:
+This method should output value for the new member:
 
 .. code-block:: python3
 
-    from typing import List, Optional, T
+    from typing import List, Optional
 
     class CountEnum(Enum):
         @staticmethod
         def enum_generate_next_value(
             name: str, start: Optional[T], count: int, values: List[T]
         ) -> T:
-            """Return count of unique members, + 1."""
+            """Return count of unique members + 1."""
             return count + 1
 
     class Mark(CountEnum):
@@ -580,20 +673,20 @@ Boolean that indicates whether auto() should be used to generate values for miss
 enum_start
 ~~~~~~~~~~
 
-Variable that indicates what value should be passed as *start* to *enum_generate_next_value*.
+Variable that indicates what value should be passed as ``start`` to ``enum_generate_next_value``.
 
 _name
 ~~~~~
 
-Private attribute, name of the enum member. Ideally it should *never* be modified.
+Private attribute, name of the member. Ideally it should *never* be modified.
 
 _value
 ~~~~~~
 
-Private attribute, value of the enum member. Again, it better *not* be modified.
+Private attribute, value of the member. Again, it is better *not* to modify it, unless required.
 
-Updating (Mutating) Enums
--------------------------
+Updating (Mutating) Enumerations
+--------------------------------
 
 Unlike in standard ``enum`` module, enumerations can be mutated:
 
@@ -604,7 +697,7 @@ Unlike in standard ``enum`` module, enumerations can be mutated:
         GREEN = 2
         BLUE = 3
 
-    Color.add_member("ALPHA", 0)  # <Color.ALPHA: 0>
+    ALPHA = Color.add_member("ALPHA", 0)  # <Color.ALPHA: 0>
 
 Or using ``Enum.update()`` for several members:
 
@@ -617,6 +710,20 @@ Or using ``Enum.update()`` for several members:
 
     Color.update(ALPHA=0, BROKEN=-1)
 
+Even ``Flag`` flags operate nicely when mutated:
+
+.. code-block:: python3
+
+    class P(Flag):
+        R = 4
+        W = 2
+        X = 1
+        Z = 0
+
+    RWX = P.R | P.W | P.X  # <P.R|W|X: 7>
+
+    P.update(RWX=RWX.value)  # RWX is now <P.RWX: 7>
+
 Installing
 ----------
 
@@ -626,11 +733,11 @@ To install the library, you can just run the following command:
 
 .. code:: sh
 
-    # Linux/OS X
-    python3 -m pip install -U enums.py
+    # Linux / OS X
+    python3 -m pip install --upgrade enums.py
 
     # Windows
-    py -3 -m pip install -U enums.py
+    py -3 -m pip install --upgrade enums.py
 
 In order to install the library from source, you can do the following:
 
@@ -638,7 +745,7 @@ In order to install the library from source, you can do the following:
 
     $ git clone https://github.com/nekitdev/enums.py
     $ cd enums.py
-    $ python -m pip install -U .
+    $ python -m pip install --upgrade .
 
 Testing
 -------
@@ -656,7 +763,9 @@ Then linting and running tests with coverage:
 
 .. code:: sh
 
+    # lint the source
     $ flake8
+    # run tests and record coverage
     $ coverage run -m pytest test_enums.py
 
 Changlelog
@@ -680,9 +789,11 @@ Changlelog
 
 - **0.3.1** - Fix small typos and other non-code-related things.
 
-- **0.4.0** - Typing fixes and usage of ``ENUM_DEFINED`` flag instead of ``Enum = None`` and checks.
+- **0.4.0** - Typing fixes and usage of ``ENUM_DEFINED`` flag instead of setting to ``None`` and checks.
 
 - **0.5.0** - Preserve important methods, such as ``__format__``, ``__repr__``, ``__str__`` and others.
+
+- **0.6.0** - Overall rewrite, implement flag boundaries and improve flags.
 
 Authors
 -------
